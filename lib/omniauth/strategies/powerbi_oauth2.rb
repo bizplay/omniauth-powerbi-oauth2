@@ -1,4 +1,5 @@
 require 'omniauth/strategies/oauth2'
+require 'securerandom'
 
 module OmniAuth
   module Strategies
@@ -9,9 +10,10 @@ module OmniAuth
       DEFAULT_SITE          = 'https://login.microsoftonline.com'
       DEFAULT_AUTHORIZE_URL = '/common/oauth2/v2.0/authorize'
       DEFAULT_TOKEN_URL     = '/common/oauth2/v2.0/token'
+      # PLEASE NOTE: No identity endpoint is available on the Power BI API;
+      #              that is why the skip_info option is set to true
+      #              and the IDENTITY_URL is empty
       DEFAULT_SKIP_INFO     = true
-      # PLEASE NOTE: no identity endpoint is available on the Power BI API; that
-      #              is why the skip_info option is set to true
       IDENTITY_URL          = ''
 
       option :client_options, {
@@ -21,7 +23,7 @@ module OmniAuth
         skip_info:     DEFAULT_SKIP_INFO
       }
 
-     option :authorize_options, [:scope]
+      option :authorize_options, [:scope]
 
       uid { raw_info["id"] }
 
@@ -30,7 +32,15 @@ module OmniAuth
       end
 
       def raw_info
-        @raw_info ||= access_token.get(IDENTITY_URL).parsed
+        # Currenlty there is no identity endpoint on the Power BI API
+        # and therefore no IDENTITY_URL;
+        # return an "empty" result instead of the normal
+        # @raw_info ||= access_token.get(IDENTITY_URL).parsed
+        @raw_info ||= {
+          'id'    => SecureRandom.uuid,
+          'name'  => '',
+          'email' => ''
+        }
       end
 
       def authorize_params
